@@ -30,6 +30,13 @@ This is a list of action items based on the project roadmap and current status.
 - [ ] **7. Tailor Pitches:**
     - [ ] Create specific versions of the pitch for our target investors (GV, Glasswing, etc.).
 
+## Phase 4: Network Goals
+
+- [ ] **8. Setup Testnet Environment:**
+    - [ ] Configure and launch a stable, public-facing testnet.
+- [ ] **9. Plan Mainnet Deployment:**
+    - [ ] Outline the technical and operational steps required for a mainnet launch.
+
 ## Maintenance
 
-- [ ] **Recreate `requirements.txt`**: The original file was lost during the reorganization. It needs to be recreated with all necessary dependencies (e.g., `pqc_dilithium`, `qiskit`, `numpy`, `openai`).
+- [x] **Recreate `requirements.txt`**: The original file was lost during the reorganization. It needs to be recreated with all necessary dependencies (e.g., `pqc_dilithium`, `qiskit`, `numpy`, `openai`).

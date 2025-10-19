@@ -1,0 +1,9 @@
+pqc_dilithium
+qiskit
+qiskit-ibm-runtime
+numpy
+openai
+flask
+flask-cors
+requests
+gunicorn

@@ -1,4 +1,4 @@
-pqc_dilithium
+liboqs-python
 qiskit
 qiskit-ibm-runtime
 numpy

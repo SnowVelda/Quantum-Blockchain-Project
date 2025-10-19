@@ -1,7 +1,7 @@
 import hashlib
 import json
 from time import time
-from pqc_dilithium import Dilithium2
+import oqs
 
 # --- Transaction Class ---
 class Transaction:
@@ -28,7 +28,8 @@ class Transaction:
             raise ValueError("Cannot sign transactions from a genesis block.")
         
         tx_hash = self.calculate_hash()
-        self.signature = Dilithium2.sign(signing_key, tx_hash.encode())
+        with oqs.Signature("Dilithium2") as sig:
+            self.signature = sig.sign(tx_hash.encode(), signing_key)
 
     def is_valid(self):
         """Validate the transaction signature."""
@@ -39,7 +40,8 @@ class Transaction:
 
         pk_bytes = bytes.fromhex(self.from_address)
         tx_hash = self.calculate_hash()
-        return Dilithium2.verify(pk_bytes, tx_hash.encode(), self.signature)
+        with oqs.Signature("Dilithium2") as sig:
+            return sig.verify(tx_hash.encode(), self.signature, pk_bytes)
 
 # --- Block Class ---
 class Block:
@@ -112,10 +114,16 @@ class QuantumBlockchain:
 
 # --- Main Execution ---
 if __name__ == '__main__':
-    # 1. Create wallets with quantum-resistant keypairs
+    # 1. Create wallets with quantum-resistant keypairs using liboqs
     print("Generating quantum-resistant wallets...")
-    pk1, sk1 = Dilithium2.keygen()
-    pk2, sk2 = Dilithium2.keygen()
+    with oqs.Signature("Dilithium2") as sig:
+        # Wallet 1
+        pk1 = sig.generate_keypair()
+        sk1 = sig.export_secret_key()
+        # Wallet 2
+        pk2 = sig.generate_keypair()
+        sk2 = sig.export_secret_key()
+
     wallet1_address = pk1.hex() # Public key is the wallet address
     wallet2_address = pk2.hex()
     print(f"Wallet 1 Address: {wallet1_address[:15]}...")

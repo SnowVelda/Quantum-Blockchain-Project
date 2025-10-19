@@ -1,0 +1,12 @@
+{
+  "animation_mode": "3D",
+  "max_frames": 240,
+  "angle": "0:(0)",
+  "zoom": "0:(1.02)",
+  "translation_z": "0:(0.5)",
+  "fps": 30,
+  "seed": 12345,
+  "prompts": {
+    "0": "Epic cinematic trailer scene of a futuristic city, ultra detailed, 8k, volumetric lighting"
+  }
+}

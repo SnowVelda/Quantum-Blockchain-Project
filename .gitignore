@@ -1,0 +1,20 @@
+# Python
+__pycache__/
+*.pyc
+
+# Environments
+*venv/
+myenv/
+
+# Secrets & Config
+.env
+.env.testnet
+cert.pem
+
+# Logs & Databases
+*.log
+*.db
+nohup.out
+
+# OS-specific
+.DS_Store

@@ -1,0 +1,42 @@
+version: "3.8"
+services:
+  postgres:
+    image: postgres:15
+    environment:
+      - POSTGRES_DB=silverscreens
+      - POSTGRES_USER=ss_user
+      - POSTGRES_PASSWORD=ss_pass
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    restart: unless-stopped
+
+  node_api:
+    image: node:18
+    working_dir: /app
+    volumes:
+      - ./:/app
+    command: sh -c "npm install || true; node server.js"
+    ports:
+      - "3000:3000"
+    depends_on:
+      - postgres
+
+  python_ai:
+    image: python:3.11
+    working_dir: /app
+    volumes:
+      - ./:/app
+    command: sh -c "pip install -r requirements.txt || true; python ai_service.py"
+    depends_on:
+      - postgres
+
+  php_admin:
+    image: php:8.1-apache
+    ports:
+      - "8080:80"
+    volumes:
+      - ./php-admin-panel:/var/www/html
+    restart: unless-stopped
+
+volumes:
+  db_data:

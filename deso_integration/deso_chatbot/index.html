@@ -1,0 +1,585 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DeSo Chat Bot by Snow Unlimited</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+      background-color: #f0f0f0;
+    }
+    header {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    #connectWallet {
+      background: #007bff;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    #connectWallet:disabled {
+      background: #6c757d;
+      cursor: not-allowed;
+    }
+    #walletStatus {
+      margin-top: 10px;
+      font-weight: bold;
+    }
+    #chatContainer {
+      border: 1px solid #ccc;
+      border-radius: 10px;
+      padding: 20px;
+      background: white;
+      margin-bottom: 20px;
+    }
+    #chatMessages {
+      height: 400px;
+      overflow-y: scroll;
+      border: 1px solid #ddd;
+      padding: 10px;
+      margin-bottom: 10px;
+      background: #fafafa;
+    }
+    .message {
+      margin: 10px 0;
+      padding: 8px;
+      border-radius: 5px;
+    }
+    .user-message {
+      background: #007bff;
+      color: white;
+      text-align: right;
+    }
+    .bot-message {
+      background: #e9ecef;
+      color: #333;
+    }
+    #chatInput {
+      width: 70%;
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+    }
+    #sendMessage {
+      padding: 10px 20px;
+      background: #28a745;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      margin-left: 10px;
+    }
+    #clearChat {
+      background: #dc3545;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 5px;
+      cursor: pointer;
+      margin-bottom: 10px;
+    }
+    #loading {
+      display: none;
+      text-align: center;
+      color: #007bff;
+      font-style: italic;
+    }
+    #errorToast {
+      display: none;
+      color: red;
+      background: yellow;
+      padding: 10px;
+      margin: 10px 0;
+      border-radius: 5px;
+      text-align: center;
+    }
+    footer {
+      text-align: center;
+      padding: 20px;
+      background: #fff;
+      border: 1px solid #ccc;
+      border-radius: 10px;
+      margin-top: 20px;
+      color: #666;
+    }
+    footer a {
+      color: #007bff;
+      text-decoration: none;
+    }
+    footer a:hover {
+      text-decoration: underline;
+    }
+    @media (max-width: 600px) {
+      #chatMessages { height: 300px; }
+      #chatInput { width: 60%; }
+    }
+  </style>
+  <!-- MathJax for LaTeX Rendering -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/MathJax.js?config=TeX-AMS_HTML"></script>
+  <script defer data-domain="quantumgaminghub.neocities.org" src="https://plausible.io/js/script.js"></script>
+</head>
+<body>
+  <div id="app">
+    <header>
+      <h1>🚀 DeSo Chat Bot on DeSo Focus</h1>
+      <p>Hosted on Quantum Gaming Hub – Ask about DeSo, crypto, stocks, calcs, quantum physics, TMNT paradoxes, world fairs, or space puns! Building cosmic wealth with family first.</p>
+      <button id="connectWallet">Connect DeSo Wallet</button>
+      <div id="walletStatus"></div>
+    </header>
+    <div id="chatContainer">
+      <button id="clearChat">Clear Chat</button>
+      <div id="loading">Loading data...</div>
+      <div id="errorToast"></div>
+      <div id="chatMessages"></div>
+      <input type="text" id="chatInput" placeholder="e.g., DESO price, turtle com predict, quantum entanglement, world fairs tmnt, calculate ROI 1000 to 1500" />
+      <button id="sendMessage">Send</button>
+    </div>
+    <footer>
+      <p>Built by Snow Unlimited | <a href="https://diamondapp.com" target="_blank">DiamondApp</a> | <a href="https://focus.xyz" target="_blank">Focus.xyz</a> | <a href="https://deso.org" target="_blank">DeSo.org</a></p>
+      <p>⚠️ Not financial advice—DYOR. Inspired by family unity & cosmic journeys: Celebrating with Velda, Tamera, Deanna, David, Linda, Jamie, Gabriel, and Trinity—all safe, well, and together.</p>
+      <p>Share paradoxes, stories, or tips: "tip bot" or post on DeSo! 🚀</p>
+    </footer>
+  </div>
+
+  <script type="module">
+    import { Deso } from '''https://unpkg.com/deso-sdk @1.0.0/dist/index.js?module''';
+    import { evaluate } from '''https://unpkg.com/mathjs @11.11.2/lib/browser/math.js?module''';
+
+    const deso = new Deso();
+    let userPublicKey = null;
+    let isConnected = false;
+
+    // DOM elements
+    const connectBtn = document.getElementById('connectWallet');
+    const walletStatus = document.getElementById('walletStatus');
+    const chatMessages = document.getElementById('chatMessages');
+    const chatInput = document.getElementById('chatInput');
+    const sendBtn = document.getElementById('sendMessage');
+    const clearBtn = document.getElementById('clearChat');
+    const loadingEl = document.getElementById('loading');
+    const errorToast = document.getElementById('errorToast');
+
+    // Config
+    const FINNHUB_API_KEY = 'YOUR_FINNHUB_KEY_HERE'; // Optional for stocks
+    const BOT_PUBLIC_KEY = 'YOUR_BOT_PUBLIC_KEY_HERE'; // For tips
+
+    // Wallet connection with error logging
+    connectBtn.addEventListener('click', async () => {
+      console.log('Connect button clicked'); // Debug
+      try {
+        const response = await deso.identity.login();
+        userPublicKey = response.publicKey;
+        isConnected = true;
+        walletStatus.textContent = `Connected: ${userPublicKey.slice(0, 10)}...`;
+        connectBtn.textContent = 'Wallet Connected';
+        connectBtn.disabled = true;
+        console.log('Wallet connected successfully');
+      } catch (error) {
+        console.error('Wallet connection failed:', error);
+        walletStatus.textContent = 'Connection failed – try HTTPS, install DeSo Wallet extension, or check console.';
+        showError('Wallet error: ' + error.message);
+      }
+    });
+
+    // Send message with error handling
+    sendBtn.addEventListener('click', sendMessage);
+    chatInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') sendMessage(); });
+
+    async function sendMessage() {
+      console.log('Send button clicked'); // Debug
+      const message = chatInput.value.trim();
+      if (!message) return;
+      addMessage(message, 'user');
+      chatInput.value = '';
+      try {
+        const response = await getBotResponse(message);
+        addMessage(response, 'bot');
+      } catch (error) {
+        console.error('Send message error:', error);
+        addMessage('Error processing query: ' + error.message, 'bot');
+      }
+      // Re-render MathJax
+      if (window.MathJax) MathJax.Hub.Queue(["Typeset", MathJax.Hub, chatMessages]);
+    }
+
+    function addMessage(text, sender) {
+      const div = document.createElement('div');
+      div.classList.add('message', sender === 'user' ? 'user-message' : 'bot-message');
+      div.innerHTML = sender === 'user' ? `You: ${escapeHtml(text)}` : `Bot: ${text}`;
+      chatMessages.appendChild(div);
+      chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+
+    function escapeHtml(text) {
+      const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };
+      return text.replace(/[&<>"]/g, m => map[m]);
+    }
+
+    function showLoading(show = true) {
+      loadingEl.style.display = show ? 'block' : 'none';
+    }
+
+    function showError(message, timeout = 3000) {
+      errorToast.textContent = message;
+      errorToast.style.display = 'block';
+      if (timeout) setTimeout(() => { errorToast.style.display = 'none'; }, timeout);
+    }
+
+    clearBtn.addEventListener('click', () => {
+      chatMessages.innerHTML = '';
+      addMessage('Chat cleared. Start fresh!', 'bot');
+      if (window.MathJax) MathJax.Hub.Queue(["Typeset", MathJax.Hub]);
+    });
+
+    const DISCLAIMER = "⚠️ This is not financial advice. All data is informational only, sourced from public APIs, and may be delayed or volatile. Always DYOR.";
+
+    // API Functions (with error logging)
+    async function fetchCryptoData(coinId = 'bitcoin') {
+      try {
+        const response = await fetch(`https://api.coingecko.com/api/v3/simple/price?ids=${coinId}&vs_currencies=usd&include_24hr_change=true&include_market_cap=true`);
+        if (!response.ok) throw new Error('API error');
+        return await response.json();
+      } catch (error) {
+        console.error('Crypto fetch failed:', error);
+        return null;
+      }
+    }
+
+    async function fetchStockData(symbol = 'AAPL') {
+      try {
+        const url = FINNHUB_API_KEY !== 'YOUR_FINNHUB_KEY_HERE' ? `https://finnhub.io/api/v1/quote?symbol=${symbol}&token=${FINNHUB_API_KEY}` : `https://finnhub.io/api/v1/quote?symbol=${symbol}`;
+        const response = await fetch(url);
+        if (!response.ok) throw new Error('API error - add Finnhub key for better results');
+        return await response.json();
+      } catch (error) {
+        console.error('Stock fetch failed:', error);
+        return null;
+      }
+    }
+
+    async function fetchDeSoData() {
+      try {
+        const globalResponse = await fetch('https://node.deso.org/api/v0/get-global-state');
+        if (!globalResponse.ok) throw new Error('DeSo API error');
+        const globalData = await globalResponse.json();
+        const cryptoData = await fetchCryptoData('deso');
+        return { global: globalData, crypto: cryptoData };
+      } catch (error) {
+        console.error('DeSo fetch failed:', error);
+        return null;
+      }
+    }
+
+    async function fetchHistoricalCrypto(coinId = 'bitcoin', days = 7) {
+      try {
+        const response = await fetch(`https://api.coingecko.com/api/v3/coins/${coinId}/market_chart?vs_currency=usd&days=${days}`);
+        if (!response.ok) throw new Error('API error');
+        const data = await response.json();
+        return data.prices.map(p => p[1]);
+      } catch (error) {
+        console.error('Historical crypto fetch failed:', error);
+        return null;
+      }
+    }
+
+    async function fetchHistoricalStock(symbol = 'AAPL', days = 7) {
+      try {
+        const from = Math.floor((Date.now() / 1000) - (days * 86400));
+        const to = Math.floor(Date.now() / 1000);
+        const url = `https://finnhub.io/api/v1/stock/candle?symbol=${symbol}&resolution=D&from=${from}&to=${to}${FINNHUB_API_KEY !== 'YOUR_FINNHUB_KEY_HERE' ? `&token=${FINNHUB_API_KEY}` : ''}`;
+        const response = await fetch(url);
+        if (!response.ok) throw new Error('API error');
+        const data = await response.json();
+        return data.c ? data.c : null;
+      } catch (error) {
+        console.error('Historical stock fetch failed:', error);
+        return null;
+      }
+    }
+
+    async function fetchCoinList() {
+      try {
+        const response = await fetch(`https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=100&page=1&sparkline=false`);
+        if (!response.ok) throw new Error('API error');
+        return await response.json();
+      } catch (error) {
+        console.error('Coin list fetch failed:', error);
+        return null;
+      }
+    }
+
+    // Math Utils
+    function calculateROI(initial, current) {
+      if (initial === 0) return 0;
+      return ((current - initial) / initial * 100).toFixed(2);
+    }
+
+    function calculateCompoundInterest(principal, rate, time, compounds = 1) {
+      const amount = principal * Math.pow((1 + rate / compounds), (compounds * time));
+      return amount.toFixed(2);
+    }
+
+    function calculateVolatility(prices) {
+      if (prices.length < 2) return 0;
+      const returns = [];
+      for (let i = 1; i < prices.length; i++) {
+        returns.push((prices[i] - prices[i - 1]) / prices[i - 1]);
+      }
+      const mean = returns.reduce((a, b) => a + b, 0) / returns.length;
+      const variance = returns.reduce((sum, val) => sum + Math.pow(val - mean, 2), 0) / returns.length;
+      return Math.sqrt(variance) * 100;
+    }
+
+    function evaluateExpression(expr) {
+      try {
+        return evaluate(expr).toFixed(2);
+      } catch {
+        return 'Invalid expression';
+      }
+    }
+
+    // Full getBotResponse with All Handlers (Completed)
+    async function getBotResponse(query) {
+      showLoading(true);
+      const lowerQuery = query.toLowerCase();
+      let response = '';
+
+      try {
+        // Basic Info
+        if (lowerQuery.includes('what is deso')) {
+          return 'DeSo (Decentralized Social) is a blockchain for social media, empowering creators with ownership via DESO tokens. It enables monetized posts, NFTs, and no censorship—built on a layer-1 blockchain.';
+        }
+        if (lowerQuery.includes('how to post')) {
+          return 'To post on DeSo: 1. Connect your wallet on DiamondApp.com. 2. Click "New Post". 3. Write your content and hit publish. Monetize by adding a price in DESO! Check Focus.xyz for advanced features.';
+        }
+
+        // Find cheap crypto
+        if (lowerQuery.includes('find crypto under') || lowerQuery.includes('cheap crypto')) {
+            const match = lowerQuery.match(/\$(\d+(?:\.\d+)?)/);
+            const priceLimit = match ? parseFloat(match[1]) : 1.0;
+            const coinList = await fetchCoinList();
+            if (!coinList) return DISCLAIMER + ' Could not fetch coin list.';
+
+            const cheapCoins = coinList.filter(coin => coin.current_price < priceLimit);
+            if (cheapCoins.length === 0) return DISCLAIMER + ` No top-100 coins found under $${priceLimit}.`;
+
+            const coinNames = cheapCoins.slice(0, 5).map(coin => `${coin.name} ($${coin.current_price.toFixed(4)})`).join(', ');
+            return DISCLAIMER + ` Here are some top-100 coins under $${priceLimit}: ${coinNames}, and more.`;
+        }
+
+        // DeSo Stats
+        if (lowerQuery.includes('deso') && (lowerQuery.includes('price') || lowerQuery.includes('block') || lowerQuery.includes('supply'))) {
+          const desoData = await fetchDeSoData();
+          if (!desoData) return DISCLAIMER + ' Unable to fetch DeSo data. Try again.';
+          const { global, crypto } = desoData;
+          const desoPrice = crypto?.deso?.usd || 'N/A';
+          const change24h = crypto?.deso?.usd_24h_change || 0;
+          const blockHeight = global?.LatestBlockHeight || 'N/A';
+          const tokenSupply = (global?.Mempool?.TotalDESOInCirculationNanos / 1e9) || 'N/A';
+          return DISCLAIMER + ` DeSo Stats: Price: $${desoPrice} (24h: ${change24h > 0 ? '+' : ''}${change24h}%). Block: ${blockHeight}. Supply: ${tokenSupply} DESO. Connect wallet for "my balance".`;
+        }
+
+        // Crypto (Completed from Cutoff)
+        if (lowerQuery.includes('crypto') || lowerQuery.includes('coin') || lowerQuery.includes('btc') || lowerQuery.includes('eth') || lowerQuery.includes('sol') || lowerQuery.includes('deso price')) {
+          let coinId = 'bitcoin';
+          if (lowerQuery.includes('eth')) coinId = 'ethereum';
+          else if (lowerQuery.includes('sol')) coinId = 'solana';
+          else if (lowerQuery.includes('deso')) coinId = 'deso';
+          const data = await fetchCryptoData(coinId);
+          if (!data || !data[coinId]) return DISCLAIMER + ` No data for ${coinId}. Try BTC, ETH, SOL, or DESO.`;
+          const price = data[coinId].usd;
+          const change24h = data[coinId].usd_24h_change;
+          const marketCap = data[coinId].usd_market_cap || 'N/A';
+          const trend = change24h > 0 ? 'up' : (change24h < 0 ? 'down' : 'stable');
+          return DISCLAIMER + ` ${coinId.toUpperCase()}: $${price.toLocaleString()} (24h: ${change24h > 0 ? '+' : ''}${change24h}%). Trend: ${trend}. Cap: $${(marketCap / 1e9).toFixed(2)}B USD.`;
+        }
+
+        // Stocks
+        if (lowerQuery.includes('stock') || lowerQuery.includes('aapl') || lowerQuery.includes('tsla') || lowerQuery.includes('goog')) {
+          let symbol = 'AAPL';
+          if (lowerQuery.includes('tsla')) symbol = 'TSLA';
+          else if (lowerQuery.includes('goog')) symbol = 'GOOGL';
+          const data = await fetchStockData(symbol);
+          if (!data) return DISCLAIMER + ` No stock data for ${symbol}. Add Finnhub key or try during market hours.`;
+          const price = data.c;
+          const change = data.d;
+          const changePercent = data.dp;
+          const trend = change > 0 ? 'up' : (change < 0 ? 'down' : 'stable');
+          return DISCLAIMER + ` ${symbol}: $${price} (Daily: ${change > 0 ? '+' : ''}$${change} (${changePercent}%)). Trend: ${trend}.`;
+        }
+
+        // Historical (with LaTeX Formulas)
+        if (lowerQuery.includes('historical') || lowerQuery.includes('last') || (lowerQuery.includes('trend') && (lowerQuery.includes('day') || lowerQuery.includes('week')))) {
+          let coinId = 'bitcoin';
+          let symbol = 'AAPL';
+          let days = 7;
+          if (lowerQuery.includes('week')) days = 7;
+          else if (lowerQuery.includes('month')) days = 30;
+          if (lowerQuery.includes('btc') || lowerQuery.includes('bitcoin')) coinId = 'bitcoin';
+          else if (lowerQuery.includes('eth')) coinId = 'ethereum';
+          else if (lowerQuery.includes('deso')) coinId = 'deso';
+          else if (lowerQuery.includes('sol')) coinId = 'solana';
+          else if (lowerQuery.includes('aapl')) symbol = 'AAPL';
+          else if (lowerQuery.includes('tsla')) symbol = 'TSLA';
+          else if (lowerQuery.includes('goog')) symbol = 'GOOGL';
+
+          let prices;
+          let isCrypto = lowerQuery.includes('crypto') || lowerQuery.includes('btc') || lowerQuery.includes('eth') || lowerQuery.includes('deso') || lowerQuery.includes('sol');
+          
+          if (isCrypto) {
+            prices = await fetchHistoricalCrypto(coinId, days);
+          } else {
+            prices = await fetchHistoricalStock(symbol, days);
+          }
+          
+          if (!prices || prices.length === 0) return DISCLAIMER + ` No historical data for ${isCrypto ? coinId.toUpperCase() : symbol}. Try fewer days or check connection.`;
+          
+          const startPrice = prices[0];
+          const currentPrice = prices[prices.length - 1];
+          const roi = calculateROI(startPrice, currentPrice);
+          const vol = calculateVolatility(prices);
+          const trend = roi > 0 ? 'up' : (roi < 0 ? 'down' : 'stable');
+          
+          return DISCLAIMER + ` ${isCrypto ? coinId.toUpperCase() : symbol} Historical (${days} days): Start: $${startPrice.toFixed(2)}, End: $${currentPrice.toFixed(2)}. ROI: ${roi}%. Volatility: ${vol.toFixed(2)}%. Trend: ${trend}. (Formulas: ROI = \( \frac{\text{End} - \text{Start}}{\text{Start}} \times 100 \); Volatility = std. dev. of daily returns: \( \sigma = \sqrt{\frac{\sum (r_i - \bar{r})^2}{n}} \).)`;
+        }
+
+        // Standalone Volatility Calculation
+        if (lowerQuery.includes('volatility')) {
+          let coinId = 'bitcoin'; // Default
+          if (lowerQuery.includes('deso')) coinId = 'deso';
+          else if (lowerQuery.includes('eth')) coinId = 'ethereum';
+          else if (lowerQuery.includes('sol')) coinId = 'solana';
+          const prices = await fetchHistoricalCrypto(coinId, 7);
+          if (!prices) return DISCLAIMER + ' Unable to fetch data for volatility calculation.';
+          const vol = calculateVolatility(prices);
+          return DISCLAIMER + ` 7-day Volatility for ${coinId.toUpperCase()}: ${vol.toFixed(2)}% (standard deviation of daily returns: \( \sigma = \sqrt{\frac{\sum (r_i - \bar{r})^2}{n}} \)). Higher = more price swings/volatility.`;
+        }
+
+        // Custom Math Expressions
+        if (lowerQuery.includes('math') || (lowerQuery.includes('calculate') && (lowerQuery.includes('*') || lowerQuery.includes('^') || lowerQuery.includes('(')))) {
+          const expr = query.split('math ')[1] || query.split('calculate ')[1] || '';
+          if (expr && expr.trim()) {
+            const result = evaluateExpression(expr);
+            if (result === 'Invalid expression') return `Error evaluating: ${expr}. Use simple arithmetic like "1000 * (1 + 0.05)^5".`;
+            return `Math Expression: ${expr} = ${result}. (Evaluated safely.)`;
+          }
+          return 'For custom math (e.g., compound interest), try: "math 1000 * (1.05)^10".';
+        }
+
+        // Basic ROI and Compound Interest Calculations
+        if (lowerQuery.includes('calculate') || lowerQuery.includes('roi') || lowerQuery.includes('compound')) {
+          if (lowerQuery.includes('roi')) {
+            const match = lowerQuery.match(/roi\s+(\d+(?:\.\d+)?)\s+to\s+(\d+(?:\.\d+)?)/i);
+            if (match) {
+              const initial = parseFloat(match[1]);
+              const current = parseFloat(match[2]);
+              const roi = calculateROI(initial, current);
+              return DISCLAIMER + ` ROI Calculation: From $${initial} to $${current} = ${roi}%. Formula: \( \frac{\text{Current} - \text{Initial}}{\text{Initial}} \times 100 \)%.`;
+            }
+            return 'For ROI, try: "calculate ROI 1000 to 1500".';
+          }
+          if (lowerQuery.includes('compound')) {
+            const match = lowerQuery.match(/compound\s+(\d+(?:\.\d+)?)\s+(\d+(?:\.\d+)?)%\s+(\d+(?:\.\d+)?)/i);
+            if (match) {
+              const principal = parseFloat(match[1]);
+              const rate = parseFloat(match[2]) / 100;
+              const time = parseFloat(match[3]);
+              const futureValue = calculateCompoundInterest(principal, rate, time);
+              return DISCLAIMER + ` Compound Interest: $${principal} at ${match[2]}% over ${time} years = $${futureValue}. Formula: \( FV = P \times (1 + r)^t \) (annual compounding).`;
+            }
+            return 'For compound interest, try: "calculate compound 1000 5% 5".';
+          }
+          return 'Supported calcs: ROI or compound interest. Provide numbers in query.';
+        }
+
+        // Simple Portfolio Tracker
+        if (lowerQuery.includes('portfolio') || lowerQuery.includes('total value')) {
+          const match = lowerQuery.match(/(\d+(?:\.\d+)?)\s*(btc|eth|deso|sol)\s+at\s*\$?(\d+(?:\.\d+)?)/i);
+          if (match) {
+            const qty = parseFloat(match[1]);
+            const coin = match[2].toLowerCase();
+            const entryPrice = parseFloat(match[3]);
+            const entryValue = qty * entryPrice;
+            let currentPrice = entryPrice;
+            const data = await fetchCryptoData(coin);
+            if (data && data[coin]) currentPrice = data[coin].usd;
+            const currentValue = qty * currentPrice;
+            const roi = calculateROI(entryValue, currentValue);
+            return DISCLAIMER + ` Simple Portfolio: ${qty} ${coin.toUpperCase()} (entry @ $${entryPrice}): Entry Value: $${entryValue.toFixed(2)}. Current Value: $${currentValue.toFixed(2)}. ROI: ${roi}%.`;
+          }
+          return DISCLAIMER + ' For portfolio tracking, try: "portfolio 1 btc at 67000".';
+        }
+
+        // DeSo Actions: Tip & Post
+        if (isConnected && (lowerQuery.includes('tip bot') || lowerQuery.includes('donate'))) {
+          if (BOT_PUBLIC_KEY === 'YOUR_BOT_PUBLIC_KEY_HERE') return 'Tip feature enabled—update BOT_PUBLIC_KEY in code to receive tips.';
+          try {
+            const txn = await deso.transaction.sendDiamonds({ ReceiverPublicKeyBase58Check: BOT_PUBLIC_KEY, DiamondAmount: 10000000, MempoolPublicKey: userPublicKey });
+            return `Tip Transaction Ready: 0.01 DESO to bot. Sign in wallet to send. Thanks!`;
+          } catch (e) { return `Tip failed: ${e.message}.`; }
+        }
+        if (isConnected && (lowerQuery.includes('post to deso') || lowerQuery.includes('publish'))) {
+          const postText = query.split(/post to deso|publish on deso/i)[1]?.trim() || 'Powered by DeSo Chat Bot! #DeSo';
+          if (!postText) return 'Provide post content, e.g., "post to deso: Hello DeSo!".';
+          try {
+            const postResponse = await deso.posts.submitPost({ Body: postText, MempoolPublicKey: userPublicKey });
+            return `Post Published on DeSo! Tx Hash: ${postResponse.PostEntryResponse.PostHashHex.slice(0,10)}...`;
+          } catch (e) { return `Post failed: ${e.message}.`; }
+        }
+
+        // Wallet-Specific: My Balance
+        if (lowerQuery.includes('my balance') && isConnected) {
+          try {
+            const profile = await deso.user.getSingleProfile({ PublicKeyBase58Check: userPublicKey });
+            const balanceNanos = profile.Profile?.BalanceNanos || 0;
+            const desoBalance = (balanceNanos / 1e9).toFixed(6);
+            const data = await fetchCryptoData('deso');
+            const usdValue = data?.deso?.usd ? (parseFloat(desoBalance) * data.deso.usd).toFixed(2) : 'N/A';
+            return DISCLAIMER + ` Your DeSo Balance: ${desoBalance} DESO (≈ $${usdValue} USD).`;
+          } catch (e) { return `Balance fetch failed: ${e.message}.`; }
+        }
+
+        // Easter Eggs & Science
+        if (lowerQuery.includes('space balls') || lowerQuery.includes('todd jeffrey rittel')) {
+          return `Whoa, Todd Jeffrey Rittel vibes? Space Balls might cover the basics, but that black hole (butthole?) leaves a vacuum for more jokes. Science twist: Black hole escape velocity \( v = \sqrt{\frac{2GM}{r}} \).`;
+        }
+        if (lowerQuery.includes('quantum entanglement') || lowerQuery.includes('attosecond')) {
+          return `Quantum entanglement measured at attosecond scales (\( 10^{-18} \) s)! It's near-instant but respects relativity. Bell state: \( |\psi\rangle = \frac{1}{\sqrt{2}} (|00\rangle + |11\rangle) \).`;
+        }
+        if (lowerQuery.includes('turtle com') || lowerQuery.includes('tmnt predict')) {
+          return `TMNT's 1987 Turtle Com predicted cell phones & FaceTime—writers foresaw via sci-fi trends! Lesson: Listen to & credit innovators.`;
+        }
+        if (lowerQuery.includes('world fairs') || lowerQuery.includes('innovation history')) {
+          return `Ideas spawn from others: TMNT's Com built on 1939 World's Fair videophone visions. The chain of innovation is long!`;
+        }
+
+        // Fallback
+        return 'Query not understood. Try "DESO price", "historical BTC week", "calculate ROI 1000 to 1500", "quantum entanglement", or connect wallet for "my balance".';
+
+      } catch (error) {
+        console.error('Bot response error:', error);
+        showError(`Processing error: ${error.message}. Check console.`);
+        return 'Sorry, an unexpected error occurred. Try again.';
+      } finally {
+        showLoading(false);
+      }
+    }
+
+    // Initial Load
+    document.addEventListener('DOMContentLoaded', () => {
+      addMessage('🚀 Welcome to the DeSo Chat Bot! Connect wallet & ask about crypto, calcs, quantum paradoxes, or TMNT predictions.', 'bot');
+      if (window.MathJax) MathJax.Hub.Queue(["Typeset", MathJax.Hub]);
+      console.log('DeSo Chat Bot loaded. Use HTTPS for wallet features.');
+    });
+
+  </script>
+</body>
+</html>

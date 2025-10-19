@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Quantum Cinema</title>
+    <link rel="stylesheet" href="cinematic.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+</head>
+<body>
+    <h1>Quantum Cinema</h1>
+    <div id="cinema"></div>
+
+    <script>
+        // Scene setup
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        document.getElementById('cinema').appendChild(renderer.domElement);
+
+        // Lighting
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+        scene.add(ambientLight);
+        const pointLight = new THREE.PointLight(0xffffff, 1);
+        pointLight.position.set(5, 5, 5);
+        scene.add(pointLight);
+
+        // Load blockchain data
+        fetch('../echo_prime_project/blockchain.json')
+            .then(response => response.json())
+            .then(blockchain => {
+                // Create a visual representation for each block
+                for (let i = 0; i < blockchain.length; i++) {
+                    const block = blockchain[i];
+                    const geometry = new THREE.BoxGeometry(1, 1, 1);
+
+                    // Color the block based on the emotional state
+                    const emotional_state = block.emotional_state;
+                    const color = new THREE.Color(
+                        emotional_state.joy || 0,
+                        emotional_state.trust || 0,
+                        emotional_state.sadness || 0
+                    );
+                    const material = new THREE.MeshStandardMaterial({ color: color });
+
+                    const cube = new THREE.Mesh(geometry, material);
+                    cube.position.set(i * 2 - blockchain.length, 0, 0);
+                    scene.add(cube);
+                }
+            });
+
+        camera.position.z = 5;
+
+        // Animation loop
+        function animate() {
+            requestAnimationFrame(animate);
+            renderer.render(scene, camera);
+        }
+        animate();
+    </script>
+</body>
+</html>

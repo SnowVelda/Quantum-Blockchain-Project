@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DeSo Quantum Chatbot</title>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; background-color: #121212; color: #e0e0e0; }
+    header { text-align: center; margin-bottom: 20px; }
+    h1 { color: #bb86fc; }
+    p { color: #b0b0b0; }
+    #connectWallet { background: #03dac6; color: #000; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-weight: bold; }
+    #connectWallet:disabled { background: #333; color: #888; cursor: not-allowed; }
+    #walletStatus { margin-top: 10px; font-weight: bold; color: #03dac6; }
+    #botFace { text-align: center; font-size: 12px; color: #03dac6; margin-bottom: 20px; white-space: pre; }
+    #chatContainer { border: 1px solid #333; border-radius: 10px; padding: 20px; background: #1e1e1e; margin-bottom: 20px; }
+    #chatMessages { height: 400px; overflow-y: scroll; border: 1px solid #333; padding: 10px; margin-bottom: 10px; background: #252525; }
+    .message { margin: 10px 0; padding: 10px; border-radius: 8px; line-height: 1.4; }
+    .user-message { background: #03dac6; color: #121212; text-align: right; margin-left: 40px; }
+    .bot-message { background: #373737; color: #e0e0e0; margin-right: 40px; }
+    #inputContainer { display: flex; }
+    #chatInput { flex-grow: 1; padding: 10px; border: 1px solid #333; border-radius: 5px; background: #252525; color: #e0e0e0; }
+    #sendMessage { padding: 10px 20px; background: #bb86fc; color: #000; border: none; border-radius: 5px; cursor: pointer; margin-left: 10px; font-weight: bold; }
+    #sendMessage:hover { background: #a06cd5; }
+    footer { text-align: center; padding: 20px; color: #888; font-size: 0.9em; }
+    footer a { color: #03dac6; text-decoration: none; }
+    footer a:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <header>
+      <h1>🚀 DeSo Quantum Chatbot</h1>
+      <p>Ask about DeSo, crypto, stocks, or run calculations. Building on the edge of tomorrow.</p>
+      <button id="connectWallet">Connect DeSo Wallet</button>
+      <div id="walletStatus"></div>
+    </header>
+    <pre id="botFace" style="text-align: center; font-size: 12px; color: #03dac6; margin-bottom: 20px;">
+( o.o )
+/\_-_/\
+    </pre>
+    <div id="chatContainer">
+      <div id="chatMessages"></div>
+      <div id="inputContainer">
+        <input type="text" id="chatInput" placeholder="e.g., DESO price, BTC price, AAPL stock" />
+        <button id="sendMessage">Send</button>
+      </div>
+    </div>
+    <footer>
+      <p>Built by Snow Unlimited | <a href="https://diamondapp.com" target="_blank">DiamondApp</a> | <a href="https://focus.xyz" target="_blank">Focus.xyz</a></p>
+    </footer>
+  </div>
+
+  <script type="module">
+    import { Deso } from 'https://unpkg.com/deso-sdk@1.0.0/dist/index.js?module';
+
+    document.addEventListener('DOMContentLoaded', () => {
+      const deso = new Deso();
+      let userPublicKey = null;
+
+      // DOM Elements
+      const connectBtn = document.getElementById('connectWallet');
+      const walletStatus = document.getElementById('walletStatus');
+      const chatMessages = document.getElementById('chatMessages');
+      const chatInput = document.getElementById('chatInput');
+      const sendBtn = document.getElementById('sendMessage');
+      const botFace = document.getElementById('botFace');
+
+      // --- Face Animation Logic ---
+      const eyeStates = ['( o.o )', '( o.- )', '( -.o )', '( -.- )'];
+      const mouthOpen = '/\_o_/\';
+      const mouthClosed = '/\_-_/\';
+      let eyeInterval;
+
+      function setFace(eyes, mouth) {
+          botFace.textContent = `${eyes}\n${mouth}`;
+      }
+
+      function startBlinking() {
+        if (eyeInterval) clearInterval(eyeInterval);
+        eyeInterval = setInterval(() => {
+          let nextState = eyeStates[0];
+          if (Math.random() < 0.2) {
+            nextState = eyeStates[3]; // Blink
+          } else if (Math.random() < 0.4) {
+            nextState = Math.random() < 0.5 ? eyeStates[1] : eyeStates[2]; // Look
+          }
+          setFace(nextState, mouthClosed);
+          setTimeout(() => { setFace(eyeStates[0], mouthClosed); }, 200);
+        }, 3000);
+      }
+
+      function animateSpeech(isSpeaking) {
+        clearInterval(eyeInterval); // Stop blinking/looking when speech state changes
+        if (isSpeaking) {
+          setFace(eyeStates[0], mouthOpen);
+        } else {
+          setFace(eyeStates[0], mouthClosed);
+          startBlinking();
+        }
+      }
+
+      // --- Message and Chat Logic ---
+      function addMessage(text, sender) {
+        const div = document.createElement('div');
+        div.classList.add('message', `${sender}-message`);
+        div.textContent = text;
+        chatMessages.appendChild(div);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+      }
+
+      async function sendMessage() {
+        const message = chatInput.value.trim();
+        if (!message) return;
+
+        addMessage(message, 'user');
+        chatInput.value = '';
+        animateSpeech(true);
+        
+        try {
+          const response = await fetch('/chat', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ message: message }),
+          });
+
+          if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+          }
+
+          const data = await response.json();
+          const botResponse = data.response || data.error || "Sorry, I didn't understand that.";
+          addMessage(botResponse, 'bot');
+
+        } catch (error) {
+          console.error('Error communicating with backend:', error);
+          addMessage('Error: Could not connect to the bot server.', 'bot');
+        } finally {
+          animateSpeech(false);
+        }
+      }
+
+      // --- DeSo Wallet Logic ---
+      connectBtn.addEventListener('click', async () => {
+        try {
+          const response = await deso.identity.login();
+          userPublicKey = response.publicKey;
+          walletStatus.textContent = `Connected: ${userPublicKey.slice(0, 10)}...`;
+          connectBtn.textContent = 'Wallet Connected';
+          connectBtn.disabled = true;
+          addMessage('Wallet connected! You can now use DeSo features.', 'bot');
+        } catch (error) {
+          walletStatus.textContent = 'Connection failed. Please try again.';
+          console.error('DeSo Wallet connection failed:', error);
+        }
+      });
+
+      // --- Initial Setup ---
+      sendBtn.addEventListener('click', sendMessage);
+      chatInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') sendMessage(); });
+      
+      addMessage('Welcome! Ask me about DeSo, crypto prices, or stock quotes.', 'bot');
+      startBlinking();
+    });
+  </script>
+</body>
+</html>

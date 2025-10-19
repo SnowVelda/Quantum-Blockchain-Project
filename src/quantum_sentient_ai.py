@@ -35,6 +35,8 @@ def load_openai_api_key():
     return key
 
 # --- AI Response Functions ---
+import google.generativeai as genai
+
 def get_gemini_response(prompt):
     if MOCK_MODE:
         mock_responses = [
@@ -44,9 +46,14 @@ def get_gemini_response(prompt):
         ]
         return random.choice(mock_responses)
     else:
-        # In a real scenario, this would involve calling the actual Gemini API.
-        # For now, we'll keep it as a placeholder.
-        return f"[Gemini Real API Placeholder] Processing: {prompt}"
+        try:
+            # Configure the Gemini API with the user's key
+            genai.configure(api_key="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJqdm5mcXBvZXZsZ3RoZW1tdmNrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY2ODUxOTIsImV4cCI6MjA3MjI2MTE5Mn0.ifid_lmdA7oIMNEaq80ADrTVUDnliKbbL-E0cUBmHpg") # Placeholder, will be replaced with actual key
+            model = genai.GenerativeModel('gemini-pro') # Or another suitable model
+            response = model.generate_content(prompt)
+            return response.text
+        except Exception as e:
+            return f"[Gemini Real API Failed] Error: {e}"
 
 def get_openai_response(prompt):
     if MOCK_MODE:

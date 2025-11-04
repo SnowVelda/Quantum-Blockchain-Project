@@ -2,17 +2,21 @@
 
 This is a list of action items based on the project roadmap and current status.
 
+## Development Environment Setup
+
+- [ ] **1. Integrate Google Gemini with Visual Studio Code:**
+    - [ ] Install necessary extensions and configure VS Code for Gemini integration.
+
 ## Phase 1: Infrastructure & Backend
 
-- [ ] **1. Initialize Supabase Project:**
-    - [ ] Create a new Supabase project if one doesn't exist.
-    - [ ] Define the database schema for `wallets` and `transactions`.
-- [ ] **2. Develop Wallet Management Code:**
-    - [ ] Choose a backend language (e.g., Python, TypeScript).
-    - [ ] Write server-side functions for wallet creation, balance queries, and updates.
-- [ ] **3. Integrate with Supabase:**
-    - [ ] Connect the QRL PoC to the Supabase backend.
-    - [ ] Replace any local/mock data handling with live calls to the Supabase API.
+- [x] **1. Initialize Database (SQLite):**
+    - [x] Set up SQLite database for `wallets` and `transactions`.
+- [x] **2. Develop Wallet Management Code:**
+    - [x] Choose a backend language (Python).
+    - [x] Write server-side functions for wallet creation, balance queries, and updates (using SQLite).
+- [x] **3. Integrate Database:**
+    - [x] Connect the QRL PoC to the SQLite backend.
+    - [x] Replace any local/mock data handling with live calls to the SQLite database.
 
 ## Phase 2: Testnet & Metrics
 

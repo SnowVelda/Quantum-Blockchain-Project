@@ -1,0 +1,1 @@
+web: gunicorn qrl_app:app
